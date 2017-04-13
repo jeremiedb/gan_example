@@ -3,6 +3,9 @@ Conditional Generative Adversial Network Demo
 
 ### Generator
 
+Network that build target objects (MNIST images) from 2 components: - Noise vector
+- The labels defining the object condition (which digit to produce)
+
 ![](www/Generator.png)
 
 ### Discriminator
@@ -13,11 +16,11 @@ Conditional Generative Adversial Network Demo
 
 Starting from noise
 
-![](www/DCGAN_iter_1.png)
+![](www/CGAN_iter_1.png)
 
 Slowly getting it
 
-![](www/DCGAN_iter_200.png)
+![](www/CGAN_iter_200.png)
 
 Produce image on demand
 
