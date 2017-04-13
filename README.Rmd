@@ -1,5 +1,8 @@
-Conditional Generative Adversial Network Demo
-================
+---
+title: "Conditional Generative Adversial Network Demo"
+output: github_document
+---
+
 
 ### Generator
 
@@ -22,3 +25,4 @@ Starting to get it
 Produce image on demand
 
 ![](www/DCGAN_iter_500.png)
+
