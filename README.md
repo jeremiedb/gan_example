@@ -22,6 +22,6 @@ Slowly getting it
 
 ![](www/CGAN_iter_200.png)
 
-Produce image on demand
+Generate specified digit images on demand
 
-![](www/DCGAN_iter_500.png)
+![](www/CGAN_iter_2400.png)

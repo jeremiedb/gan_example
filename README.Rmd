@@ -7,8 +7,8 @@ output: github_document
 ### Generator 
 
 Network that build target objects (MNIST images) from 2 components: 
-  - Noise vector  
-  - The labels defining the object condition (which digit to produce)
+- Noise vector  
+- The labels defining the object condition (which digit to produce)
 
 
 ```{r, include=FALSE}
@@ -42,7 +42,7 @@ Slowly getting it
 
 ![](www/CGAN_iter_200.png)
 
-Produce image on demand
+Generate specified digit images on demand
 
-![](www/DCGAN_iter_500.png)
+![](www/CGAN_iter_2400.png)
 
