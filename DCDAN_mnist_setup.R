@@ -1,3 +1,4 @@
+require("imager")
 require("data.table")
 require("dplyr")
 require("tidyr")
@@ -6,9 +7,9 @@ require("ggplot2")
 require("plotly")
 require("DiagrammeR")
 require("DT")
-require("imager")
 require("mxnet")
 
+source("iterators.R")
 
 #############################################
 train <- read.csv('data/train.csv', header=TRUE)
@@ -19,16 +20,15 @@ eval_rows<- sample(1:nrow(train), size = round(0.1*nrow(train),0), replace = F)
 eval<- train[eval_rows,]
 train<- train[-eval_rows,]
 
-
 train <- data.matrix(train)
 eval <- data.matrix(eval)
 test <- data.matrix(test)
 
 train_x <- train[,-1]
-train_labels <- train[,1]
+train_labels <- as.integer(train[,1])
 
 eval_x <- eval[,-1]
-eval_labels <- eval[,1]
+eval_labels <- as.integer(eval[,1])
 
 train_x <- t(train_x/255*2-1)
 eval_x <- t(eval_x/255*2-1)
@@ -44,12 +44,13 @@ dim(eval_array) <- c(28, 28, 1, ncol(eval_x))
 test_array <- test
 dim(test_array) <- c(28, 28, 1, ncol(test))
 
+
 ##################################################
 #### Generator Symbol
 ##################################################
-random_dim<- 128
-gen_features<- 64
-dis_features<- 24
+random_dim<- 96
+gen_features<- 96
+dis_features<- 32
 image_depth = 1
 fix_gamma<- T
 no_bias<- T
@@ -89,32 +90,37 @@ data = mx.symbol.Variable('data')
 dis_digit = mx.symbol.Variable('digit')
 label = mx.symbol.Variable('label')
 
-d1 = mx.symbol.Convolution(data, name='d1', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=24, no_bias=no_bias)
-#dbn1 = mx.symbol.BatchNorm(d1, name='dbn1', fix_gamma=fix_gamma, eps=eps)
-dact1 = mx.symbol.LeakyReLU(d1, name='dact1', act_type='elu', slope=0.25)
+dis_digit<- mx.symbol.Reshape(data=dis_digit, shape=c(1,1,10,batch_size), name="digit_reshape")
+dis_digit<- mx.symbol.broadcast_to(data=dis_digit, shape=c(28,28,10, batch_size), name="digit_broadcast")
 
-d2 = mx.symbol.Convolution(dact1, name='d2', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=32, no_bias=no_bias)
+data_concat <- mx.symbol.Concat(list(data, dis_digit), num.args = 2, dim = 1, name='dflat_concat')
+
+d1 = mx.symbol.Convolution(data=data_concat, name='d1', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=24, no_bias=no_bias)
+dbn1 = mx.symbol.BatchNorm(d1, name='dbn1', fix_gamma=fix_gamma, eps=eps)
+dact1 = mx.symbol.LeakyReLU(dbn1, name='dact1', act_type='elu', slope=0.25)
+pool1 <- mx.symbol.Pooling(data=dact1, name="pool1", pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
+
+d2 = mx.symbol.Convolution(pool1, name='d2', kernel=c(3,3), stride=c(2,2), pad=c(0,0), num_filter=32, no_bias=no_bias)
 dbn2 = mx.symbol.BatchNorm(d2, name='dbn2', fix_gamma=fix_gamma, eps=eps)
 dact2 = mx.symbol.LeakyReLU(dbn2, name='dact2', act_type='elu', slope=0.25)
+#pool2 <- mx.symbol.Pooling(data=dact2, name="pool2", pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
 
 # d3 = mx.symbol.Convolution(dact2, name='d3', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=ndf*4, no_bias=no_bias)
 # dbn3 = mx.symbol.BatchNorm(d3, name='dbn3', fix_gamma=fix_gamma, eps=eps)
 # dact3 = mx.symbol.LeakyReLU(dbn3, name='dact3', act_type='elu', slope=0.25)
 
-d4 = mx.symbol.Convolution(dact2, name='d4', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=48, no_bias=no_bias)
+d4 = mx.symbol.Convolution(dact2, name='d4', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=64, no_bias=no_bias)
 dbn4 = mx.symbol.BatchNorm(d4, name='dbn4', fix_gamma=fix_gamma, eps=eps)
 dact4 = mx.symbol.LeakyReLU(dbn4, name='dact4', act_type='elu', slope=0.25)
 
-d5 = mx.symbol.Convolution(dact4, name='d5', kernel=c(5,5), pad=c(0,0), num_filter=64, no_bias=no_bias)
+d5 = mx.symbol.Convolution(dact4, name='d5', kernel=c(4,4), pad=c(0,0), num_filter=128, no_bias=no_bias)
 dflat = mx.symbol.Flatten(d5, name="dflat")
 
-dflat_concat <- mx.symbol.Concat(list(dflat, dis_digit), num.args = 2, dim = 1, name='dflat_concat')
-
-dfc1 <- mx.symbol.FullyConnected(data=dflat_concat, name="dfc1", num_hidden=32, no_bias=F)
+dfc1 <- mx.symbol.FullyConnected(data=dflat, name="dfc1", num_hidden=32, no_bias=T)
 dfc1_act<- mx.symbol.LeakyReLU(dfc1, name='dfc1_act', act_type='elu', slope=0.25)
 
 dfc <- mx.symbol.FullyConnected(data=dfc1_act, name="dfc", num_hidden=1, no_bias=F)
-D_sym = mx.symbol.LogisticRegressionOutput(data=dfc, label=label, name='dloss')
+D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='dloss')
 
 
 ########################

@@ -23,7 +23,7 @@ G_iterator<- function(batch_size){
   }
   
   value<- function(){
-    #set.seed(123+batch)
+    set.seed(123+batch)
     digit<- sample(10, size = batch_size, replace = T)
     data<- array(0, dim = c(10, batch_size))
     data[cbind(digit, 1:batch_size)]<-1
@@ -57,7 +57,7 @@ D_iterator<- function(batch_size){
   }
   
   value<- function(){
-    #set.seed(123+batch)
+    set.seed(123+batch)
     idx<- sample(length(train_labels), size = batch_size, replace = T)
     label<- train_labels[idx]
     data<- train_array[,,,idx, drop=F]
@@ -70,14 +70,20 @@ D_iterator<- function(batch_size){
   return(list(reset=reset, iter.next=iter.next, value=value, batch_size=batch_size, batch=batch))
 }
 
-# 
+
 # iter_D<- D_iterator(16)
+# 
 # iter_D$reset()
 # iter_D$iter.next()
 # iter_D_values<- iter_D$value()
 # dim(iter_D_values$data)
 # dim(iter_D_values$digit)
 # dim(iter_D_values$label)
+# 
+# iter_D$value()$label
+# img <- as.array(iter_D$value()$data)[,,,2]
+# plot(as.cimg(img), axes=F)
+
 # 
 # iter_G<- G_iterator(16)
 # iter_G$reset()

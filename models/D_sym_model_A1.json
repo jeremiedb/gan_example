@@ -1,0 +1,447 @@
+{
+  "nodes": [
+    {
+      "op": "null", 
+      "name": "data", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "digit", 
+      "inputs": []
+    }, 
+    {
+      "op": "Reshape", 
+      "name": "digit_reshape", 
+      "attr": {"shape": "(64, 10, 1, 1)"}, 
+      "inputs": [[1, 0, 0]]
+    }, 
+    {
+      "op": "broadcast_to", 
+      "name": "digit_broadcast", 
+      "attr": {"shape": "(64, 10, 28, 28)"}, 
+      "inputs": [[2, 0, 0]]
+    }, 
+    {
+      "op": "Concat", 
+      "name": "dflat_concat", 
+      "attr": {
+        "dim": "1", 
+        "num_args": "2"
+      }, 
+      "inputs": [[0, 0, 0], [3, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "d1_weight", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "24", 
+        "pad": "(0, 0)", 
+        "stride": "(1, 1)"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "Convolution", 
+      "name": "d1", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "24", 
+        "pad": "(0, 0)", 
+        "stride": "(1, 1)"
+      }, 
+      "inputs": [[4, 0, 0], [5, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn1_gamma", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn1_beta", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn1_moving_mean", 
+      "attr": {
+        "__init__": "[\"zero\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn1_moving_var", 
+      "attr": {
+        "__init__": "[\"one\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "BatchNorm", 
+      "name": "dbn1", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": [[6, 0, 0], [7, 0, 0], [8, 0, 0], [9, 0, 1], [10, 0, 1]]
+    }, 
+    {
+      "op": "LeakyReLU", 
+      "name": "dact1", 
+      "attr": {
+        "act_type": "elu", 
+        "slope": "0.25"
+      }, 
+      "inputs": [[11, 0, 0]]
+    }, 
+    {
+      "op": "Pooling", 
+      "name": "pool1", 
+      "attr": {
+        "kernel": "(2, 2)", 
+        "pad": "(0, 0)", 
+        "pool_type": "max", 
+        "stride": "(2, 2)"
+      }, 
+      "inputs": [[12, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "d2_weight", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "32", 
+        "pad": "(0, 0)", 
+        "stride": "(2, 2)"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "Convolution", 
+      "name": "d2", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "32", 
+        "pad": "(0, 0)", 
+        "stride": "(2, 2)"
+      }, 
+      "inputs": [[13, 0, 0], [14, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn2_gamma", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn2_beta", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn2_moving_mean", 
+      "attr": {
+        "__init__": "[\"zero\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn2_moving_var", 
+      "attr": {
+        "__init__": "[\"one\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "BatchNorm", 
+      "name": "dbn2", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": [[15, 0, 0], [16, 0, 0], [17, 0, 0], [18, 0, 1], [19, 0, 1]]
+    }, 
+    {
+      "op": "LeakyReLU", 
+      "name": "dact2", 
+      "attr": {
+        "act_type": "elu", 
+        "slope": "0.25"
+      }, 
+      "inputs": [[20, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "d4_weight", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "64", 
+        "pad": "(0, 0)", 
+        "stride": "(1, 1)"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "Convolution", 
+      "name": "d4", 
+      "attr": {
+        "kernel": "(3, 3)", 
+        "no_bias": "1", 
+        "num_filter": "64", 
+        "pad": "(0, 0)", 
+        "stride": "(1, 1)"
+      }, 
+      "inputs": [[21, 0, 0], [22, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn4_gamma", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn4_beta", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn4_moving_mean", 
+      "attr": {
+        "__init__": "[\"zero\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dbn4_moving_var", 
+      "attr": {
+        "__init__": "[\"one\", {}]", 
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "BatchNorm", 
+      "name": "dbn4", 
+      "attr": {
+        "eps": "1e-005", 
+        "fix_gamma": "1"
+      }, 
+      "inputs": [[23, 0, 0], [24, 0, 0], [25, 0, 0], [26, 0, 1], [27, 0, 1]]
+    }, 
+    {
+      "op": "LeakyReLU", 
+      "name": "dact4", 
+      "attr": {
+        "act_type": "elu", 
+        "slope": "0.25"
+      }, 
+      "inputs": [[28, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "d5_weight", 
+      "attr": {
+        "kernel": "(4, 4)", 
+        "no_bias": "1", 
+        "num_filter": "128", 
+        "pad": "(0, 0)"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "Convolution", 
+      "name": "d5", 
+      "attr": {
+        "kernel": "(4, 4)", 
+        "no_bias": "1", 
+        "num_filter": "128", 
+        "pad": "(0, 0)"
+      }, 
+      "inputs": [[29, 0, 0], [30, 0, 0]]
+    }, 
+    {
+      "op": "Flatten", 
+      "name": "dflat", 
+      "inputs": [[31, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "dfc1_weight", 
+      "attr": {
+        "no_bias": "1", 
+        "num_hidden": "32"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "FullyConnected", 
+      "name": "dfc1", 
+      "attr": {
+        "no_bias": "1", 
+        "num_hidden": "32"
+      }, 
+      "inputs": [[32, 0, 0], [33, 0, 0]]
+    }, 
+    {
+      "op": "LeakyReLU", 
+      "name": "dfc1_act", 
+      "attr": {
+        "act_type": "elu", 
+        "slope": "0.25"
+      }, 
+      "inputs": [[34, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "dfc_weight", 
+      "attr": {
+        "no_bias": "0", 
+        "num_hidden": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "dfc_bias", 
+      "attr": {
+        "no_bias": "0", 
+        "num_hidden": "1"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "FullyConnected", 
+      "name": "dfc", 
+      "attr": {
+        "no_bias": "0", 
+        "num_hidden": "1"
+      }, 
+      "inputs": [[35, 0, 0], [36, 0, 0], [37, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "label", 
+      "inputs": []
+    }, 
+    {
+      "op": "LogisticRegressionOutput", 
+      "name": "dloss", 
+      "inputs": [[38, 0, 0], [39, 0, 0]]
+    }
+  ], 
+  "arg_nodes": [
+    0, 
+    1, 
+    5, 
+    7, 
+    8, 
+    9, 
+    10, 
+    14, 
+    16, 
+    17, 
+    18, 
+    19, 
+    22, 
+    24, 
+    25, 
+    26, 
+    27, 
+    30, 
+    33, 
+    36, 
+    37, 
+    39
+  ], 
+  "node_row_ptr": [
+    0, 
+    1, 
+    2, 
+    3, 
+    4, 
+    5, 
+    6, 
+    7, 
+    8, 
+    9, 
+    10, 
+    11, 
+    14, 
+    15, 
+    16, 
+    17, 
+    18, 
+    19, 
+    20, 
+    21, 
+    22, 
+    25, 
+    26, 
+    27, 
+    28, 
+    29, 
+    30, 
+    31, 
+    32, 
+    35, 
+    36, 
+    37, 
+    38, 
+    39, 
+    40, 
+    41, 
+    42, 
+    43, 
+    44, 
+    45, 
+    46, 
+    47
+  ], 
+  "heads": [[40, 0, 0]], 
+  "attrs": {"mxnet_version": ["int", 905]}
+}

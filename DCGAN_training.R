@@ -29,7 +29,7 @@ exec_G<- mx.simple.bind(symbol = G_sym, data=data_shape_G, ctx = devices, grad.r
 exec_D<- mx.simple.bind(symbol = D_sym, data=data_shape_D, digit=digit_shape_D, ctx = devices, grad.req = "write")
 
 ### initialize parameters - To Do - personalise each layer
-initializer<- mx.init.Xavier(rnd_type = "gaussian", factor_type = "avg", magnitude = 5)
+initializer<- mx.init.Xavier(rnd_type = "gaussian", factor_type = "avg", magnitude = 3)
 
 arg_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$arg.shapes, ctx = devices)
 aux_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$aux.shapes, ctx = devices)
@@ -50,8 +50,8 @@ input_names_D <- mxnet:::mx.model.check.arguments(D_sym)
 ###################################################
 #initialize optimizers
 optimizer_G<-mx.opt.create(name = "adadelta",
-                           rho=0.85, 
-                           epsilon = 1e-6, 
+                           rho=0.92, 
+                           epsilon = 5e-8, 
                            wd=0, 
                            rescale.grad=1/batch_size, 
                            clip_gradient=1)
@@ -59,8 +59,8 @@ optimizer_G<-mx.opt.create(name = "adadelta",
 updater_G<- mx.opt.get.updater(optimizer = optimizer_G, weights = exec_G$ref.arg.arrays)
 
 optimizer_D<-mx.opt.create(name = "adadelta",
-                           rho=0.85, 
-                           epsilon = 1e-6, 
+                           rho=0.92, 
+                           epsilon = 5e-8, 
                            wd=0, 
                            rescale.grad=1/batch_size, 
                            clip_gradient=1)
@@ -70,7 +70,6 @@ updater_D<- mx.opt.get.updater(optimizer = optimizer_D, weights = exec_D$ref.arg
 #initialize metric
 metric_G<- mx.metric.binacc
 metric_G_value<- metric_G$init()
-#eval.metric<- metric$init()
 
 metric_D<- mx.metric.binacc
 metric_D_value<- metric_D$init()
@@ -79,7 +78,8 @@ iteration<- 1
 iter_G$reset()
 iter_D$reset()
 
-for (iteration in 1:2500) {
+
+for (iteration in 1:2400) {
   
   iter_G$iter.next()
   iter_D$iter.next()
@@ -93,9 +93,11 @@ for (iteration in 1:2500) {
   ### Feed Discriminator with Concatenated Generator images and real images
   ### Random input to Generator
   D_data_fake <- exec_G$ref.outputs$gact5_output
-  D_digit_fake <- iter_G_values$data
+  D_digit_fake <- G_values$data %>% mx.nd.Reshape(shape=c(-1, batch_size))
   
-  D_data_real <- iter_D$value()$data
+  D_values <- iter_D$value()
+  D_data_real <- D_values$data
+  D_digit_real <- D_values$digit
   
   #D_values_fake_split_1<- mx.nd.slice.axis(data = D_values_fake, axis=0, begin = 0, end = batch_size/2)
   #D_values_fake_split_2<- mx.nd.slice.axis(data = D_values_fake, axis=0, begin = batch_size/2, end = batch_size)
@@ -104,7 +106,7 @@ for (iteration in 1:2500) {
   #D_values_real_split_2<- mx.nd.slice.axis(data = D_values_real, axis=0, begin = batch_size/2, end = batch_size)
   
   ### Train loop on fake
-  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_values_fake, label=mx.nd.array(rep(0, batch_size))), match.name=TRUE)
+  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_fake, digit=D_digit_fake, label=mx.nd.array(rep(0, batch_size))), match.name=TRUE)
   mx.exec.forward(exec_D, is.train=T)
   mx.exec.backward(exec_D)
   update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
@@ -113,7 +115,7 @@ for (iteration in 1:2500) {
   metric_D_value <- metric_D$update(label = mx.nd.array(rep(0, batch_size)), exec_D$ref.outputs[["dloss_output"]], metric_D_value)
   
   ### Train loop on real
-  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_values_real, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
+  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_real, digit=D_digit_real, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
   mx.exec.forward(exec_D, is.train=T)
   mx.exec.backward(exec_D)
   update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
@@ -123,7 +125,7 @@ for (iteration in 1:2500) {
   
   ### Update Generator weights - use a seperate executor for writing data gradients
   exec_D_back<- mxnet:::mx.symbol.bind(symbol = D_sym, arg.arrays = exec_D$arg.arrays, aux.arrays = exec_D$aux.arrays, grad.reqs = rep("write", length(exec_D$arg.arrays)), ctx = devices)
-  mx.exec.update.arg.arrays(exec_D_back, arg.arrays = list(data=D_values_fake, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
+  mx.exec.update.arg.arrays(exec_D_back, arg.arrays = list(data=D_data_fake, digit=D_digit_fake, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
   mx.exec.forward(exec_D_back, is.train=T)
   mx.exec.backward(exec_D_back)
   D_grads<- exec_D_back$ref.grad.arrays$data
@@ -152,20 +154,25 @@ for (iteration in 1:2500) {
     
     metric_D_value<- metric_D$init()
     
-    par(mfrow=c(4,4), mar=c(0.1,0.1,0.1,0.1))
-    for (i in 1:8) {
+    par(mfrow=c(3,3), mar=c(0.1,0.1,0.1,0.1))
+    for (i in 1:9) {
       img <- as.array(exec_G$ref.outputs$gact5_output)[,,,i]
       plot(as.cimg(img), axes=F)
     }
     
-    for (i in 1:8) {
-      img <- as.array(iter_D$value()$data)[,,,i]
-      plot(as.cimg(img), axes=F)
-    }
+    # for (i in 1:8) {
+    #   img <- as.array(iter_D$value()$data)[,,,i]
+    #   plot(as.cimg(img), axes=F)
+    # }
     
     print(as.numeric(as.array(G_values$digit)))
+    print(as.numeric(as.array(D_values$label)))
     
   }
-  
 }
+
+mx.symbol.save(D_sym, filename = "models/D_sym_model_A1.json")
+mx.symbol.save(G_sym, filename = "models/G_sym_model_A1.json")
+mx.nd.save(arg_param_ini_D, filename = "models/D_params_model_A1.params")
+mx.nd.save(arg_param_ini_G, filename = "models/G_params_model_A1.params")
 
