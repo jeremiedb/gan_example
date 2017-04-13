@@ -51,7 +51,7 @@ input_names_D <- mxnet:::mx.model.check.arguments(D_sym)
 #initialize optimizers
 optimizer_G<-mx.opt.create(name = "adadelta",
                            rho=0.92, 
-                           epsilon = 5e-8, 
+                           epsilon = 1e-6, 
                            wd=0, 
                            rescale.grad=1/batch_size, 
                            clip_gradient=1)
@@ -60,7 +60,7 @@ updater_G<- mx.opt.get.updater(optimizer = optimizer_G, weights = exec_G$ref.arg
 
 optimizer_D<-mx.opt.create(name = "adadelta",
                            rho=0.92, 
-                           epsilon = 5e-8, 
+                           epsilon = 1e-6, 
                            wd=0, 
                            rescale.grad=1/batch_size, 
                            clip_gradient=1)

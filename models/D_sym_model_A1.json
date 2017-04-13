@@ -369,7 +369,7 @@
       "inputs": []
     }, 
     {
-      "op": "LogisticRegressionOutput", 
+      "op": "LinearRegressionOutput", 
       "name": "dloss", 
       "inputs": [[38, 0, 0], [39, 0, 0]]
     }

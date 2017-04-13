@@ -15,7 +15,7 @@ Starting from noise
 
 ![](www/DCGAN_iter_1.png)
 
-Starting to get it
+Slowly getting it
 
 ![](www/DCGAN_iter_200.png)
 

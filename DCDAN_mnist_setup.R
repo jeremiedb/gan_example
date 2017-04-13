@@ -132,3 +132,7 @@ input_shape_D<- c(28, 28, 1, batch_size)
 graph.viz(G_sym, type = "vis", direction = "UD", shape=input_shape_G)
 graph.viz(D_sym, type = "vis", direction = "UD", shape=input_shape_D)
 
+
+graph.viz(G_sym, type = "graph", direction = "LR", shape=input_shape_G)
+graph.viz(D_sym, type = "graph", direction = "LR", shape=input_shape_D)
+
