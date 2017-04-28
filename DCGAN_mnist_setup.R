@@ -12,8 +12,8 @@ require("mxnet")
 source("iterators.R")
 
 #############################################
-train <- read.csv('data/train.csv', header=TRUE)
-test <- read.csv('data/test.csv', header=TRUE)
+train <- read_csv('data/train.csv')
+test <- read_csv('data/test.csv')
 
 set.seed(123)
 eval_rows<- sample(1:nrow(train), size = round(0.1*nrow(train),0), replace = F)
@@ -131,7 +131,6 @@ input_shape_D<- c(28, 28, 1, batch_size)
 
 graph.viz(G_sym, type = "vis", direction = "UD", shape=input_shape_G)
 graph.viz(D_sym, type = "vis", direction = "UD", shape=input_shape_D)
-
 
 graph.viz(G_sym, type = "graph", direction = "LR", shape=input_shape_G)
 graph.viz(D_sym, type = "graph", direction = "LR", shape=input_shape_D)

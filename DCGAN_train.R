@@ -79,12 +79,16 @@ iter_G$reset()
 iter_D$reset()
 
 
-for (iteration in 1:2400) {
+for (iteration in 1:400) {
   
   iter_G$iter.next()
   iter_D$iter.next()
   
   ### Random input to Generator to produce fake sample
+  
+  # Specified value for plot
+  #G_data <-
+  
   G_values <- iter_G$value()
   G_data <- G_values[input_names_G]
   mx.exec.update.arg.arrays(exec_G, arg.arrays = G_data, match.name=TRUE)
@@ -136,7 +140,6 @@ for (iteration in 1:2400) {
   
   ### Update metrics
   #metric_G_value <- metric_G$update(values[[label_name]], exec_G$ref.outputs[[output_name]], metric_G_value)
-  
   
   if (iteration %% 25==0){
     
