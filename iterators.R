@@ -1,4 +1,3 @@
-require(mxnet)
 
 G_iterator<- function(batch_size){
   
@@ -6,10 +5,7 @@ G_iterator<- function(batch_size){
   batch_per_epoch<-5
   
   reset<- function(){
-    #set.seed(123)
     batch<<- 0
-    ### Return first BucketID at reset for initialization of the model
-    #bucketID<<- bucket_plan[1]
   }
   
   iter.next<- function(){
@@ -40,15 +36,11 @@ D_iterator<- function(batch_size){
   batch_per_epoch<-5
   
   reset<- function(){
-    #set.seed(123)
     batch<<- 0
-    ### Return first BucketID at reset for initialization of the model
-    #bucketID<<- bucket_plan[1]
   }
   
   iter.next<- function(){
     batch<<- batch+1
-    #set.seed(123)
     if (batch>batch_per_epoch) {
       return(FALSE)
     } else {
@@ -71,35 +63,3 @@ D_iterator<- function(batch_size){
 }
 
 
-# iter_D<- D_iterator(16)
-# 
-# iter_D$reset()
-# iter_D$iter.next()
-# iter_D_values<- iter_D$value()
-# dim(iter_D_values$data)
-# dim(iter_D_values$digit)
-# dim(iter_D_values$label)
-# 
-# iter_D$value()$label
-# img <- as.array(iter_D$value()$data)[,,,2]
-# plot(as.cimg(img), axes=F)
-
-# 
-# iter_G<- G_iterator(16)
-# iter_G$reset()
-# iter_G$iter.next()
-# iter_G_values<- iter_G$value()
-# 
-# dim(iter_G_values$data)
-# dim(iter_G_values$digit)
-# as.array(iter_G_values$data)[1,1,,]
-# 
-# summary(as.array(iter_G_values$data))
-# iter_G_values$digit
-# iter_G$batch
-# 
-# class(data_test)
-# dim(data_test)
-# data_test
-# iter_G$value()$label
-# iter_G$batch

@@ -6,7 +6,6 @@ require("readr")
 require("ggplot2")
 require("plotly")
 require("DiagrammeR")
-require("DT")
 require("mxnet")
 
 source("iterators.R")

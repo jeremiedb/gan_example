@@ -10,6 +10,8 @@ The demo is made of the two following scripts:
 - `DCGAN_mnist_setup.R`: prepare data and define model structure
 - `DCGAN_train.R`: execute the training
 
+Custom iterators are also defined in `iterators.R` and imported by `DCGAN_mnist_setup.R`. 
+
 It also requires to have MNIST dataset (available through [Kaggle](https://www.kaggle.com/c/digit-recognizer/data)) in `/data/` folder. 
 
 *** 

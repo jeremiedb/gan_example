@@ -85,10 +85,6 @@ for (iteration in 1:400) {
   iter_D$iter.next()
   
   ### Random input to Generator to produce fake sample
-  
-  # Specified value for plot
-  #G_data <-
-  
   G_values <- iter_G$value()
   G_data <- G_values[input_names_G]
   mx.exec.update.arg.arrays(exec_G, arg.arrays = G_data, match.name=TRUE)
@@ -102,12 +98,6 @@ for (iteration in 1:400) {
   D_values <- iter_D$value()
   D_data_real <- D_values$data
   D_digit_real <- D_values$digit
-  
-  #D_values_fake_split_1<- mx.nd.slice.axis(data = D_values_fake, axis=0, begin = 0, end = batch_size/2)
-  #D_values_fake_split_2<- mx.nd.slice.axis(data = D_values_fake, axis=0, begin = batch_size/2, end = batch_size)
-  
-  #D_values_real_split_1<- mx.nd.slice.axis(data = D_values_real, axis=0, begin = 0, end = batch_size/2)
-  #D_values_real_split_2<- mx.nd.slice.axis(data = D_values_real, axis=0, begin = batch_size/2, end = batch_size)
   
   ### Train loop on fake
   mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_fake, digit=D_digit_fake, label=mx.nd.array(rep(0, batch_size))), match.name=TRUE)
