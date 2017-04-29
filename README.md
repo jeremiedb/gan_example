@@ -3,16 +3,18 @@ Conditional Generative Adversial Network Demo
 
 > Demo on how to build and train DCGAN model with MXNet and its R frontend.
 
-The demo involves running the two following scripts:
+The demo is made of the two following scripts:
 
--   `DCGAN_mnist_setup`
--   `DCGAN_train`
+-   `DCGAN_mnist_setup.R`: Prepare data and define model structure
+-   `DCGAN_train.R`: Execute the training
 
 It also requires to have MNIST dataset (available through [Kaggle](https://www.kaggle.com/c/digit-recognizer/data)) in `/data/` folder.
 
 ------------------------------------------------------------------------
 
-A Generative Adversial Model trains simultaneously two models: a generator that learns to output fake samples from an unknown distribution and another that learn that distinguish fake from real samples.
+A Generative Adversial Model trains simultaneously two models: a generator that learns to output fake samples from an unknown distribution and a discriminator that learns to distinguish fake from real samples.
+
+In the conditinal variation of the GAN, the generator is instructed to generate a real sample having specific characteristics rather than a generic sample. Such condition could be the label associated with an image or a more detailed tag as shown in the example below:
 
 ![](www/dcgan_network.jpg)
 
@@ -25,14 +27,9 @@ Network that build target objects (MNIST images) from 2 components:
 - Noise vector
 - The labels defining the object condition (which digit to produce)
 
-``` r
-require(imager)
-require(dplyr)
-require(DT)
-require(mxnet)
-```
+The noise vector will provide the building blocks to the Generator model, which will learns how to structure that noise into a sample.
 
-    ## Init Rcpp
+The information on the label for which to generate a fake sample is provided by a one-hot encoding of the label that is appended to the random noise.
 
 ![](www/Generator.png)
 
@@ -40,6 +37,8 @@ Discriminator
 -------------
 
 A model that attempt to distinguish a real sample from a fake one produced by the generator model.
+
+In a conditional GAN, the label associated with the samples are also provided to the Discriminator. In this demo, this information is again provided a a hot-hot encoding of the label that has been broadcasted to match the image dimensions (28x28).
 
 ![](www/Discriminator.png)
 
@@ -82,6 +81,8 @@ update_args_G<- updater_G(weight = exec_G$ref.arg.arrays, grad = exec_G$ref.grad
 mx.exec.update.arg.arrays(exec_G, update_args_G, skip.null=TRUE)
 ```
 
+The above training steps are executed in the `DCGAN_train.R` script.
+
 Starting from noise
 
 ![](www/CGAN_iter_1.png)
@@ -93,3 +94,5 @@ Slowly getting it
 Generate specified digit images on demand
 
 ![](www/CGAN_iter_2400.png)
+
+Further details of the DCGAN methodology can be found in the paper [Generative Adversarial Text to Image Synthesis](https://arxiv.org/abs/1605.05396).
