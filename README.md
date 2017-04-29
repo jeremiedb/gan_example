@@ -5,8 +5,8 @@ Conditional Generative Adversial Network Demo
 
 The demo is made of the two following scripts:
 
--   `DCGAN_mnist_setup.R`: Prepare data and define model structure
--   `DCGAN_train.R`: Execute the training
+-   `DCGAN_mnist_setup.R`: prepare data and define model structure
+-   `DCGAN_train.R`: execute the training
 
 It also requires to have MNIST dataset (available through [Kaggle](https://www.kaggle.com/c/digit-recognizer/data)) in `/data/` folder.
 
