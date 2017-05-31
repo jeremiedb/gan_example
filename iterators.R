@@ -48,9 +48,9 @@ D_iterator<- function(batch_size){
   
   value<- function(){
     set.seed(123+batch)
-    idx<- sample(length(train_labels), size = batch_size, replace = T)
-    data<- train_array[,,,idx, drop=F]
-    label<- mx.nd.array(train_labels[idx])
+    idx<- sample(length(train_label), size = batch_size, replace = T)
+    data<- train_data[,,,idx, drop=F]
+    label<- mx.nd.array(train_label[idx])
     digit<- mx.nd.one.hot(indices = label, depth = 10)
     
     return(list(data=mx.nd.array(data), digit=digit, label=label))
