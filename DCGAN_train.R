@@ -29,11 +29,11 @@ exec_D<- mx.simple.bind(symbol = D_sym, data=data_shape_D, digit=digit_shape_D, 
 ### initialize parameters - To Do - personalise each layer
 initializer<- mx.init.Xavier(rnd_type = "gaussian", factor_type = "avg", magnitude = 3)
 
-arg_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$arg.shapes, ctx = devices)
-aux_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$aux.shapes, ctx = devices)
+arg_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$arg.shapes, ctx = mx.cpu())
+aux_param_ini_G<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(G_sym, data=data_shape_G)$aux.shapes, ctx = mx.cpu())
 
-arg_param_ini_D<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(D_sym, data=data_shape_D, digit=digit_shape_D)$arg.shapes, ctx = devices)
-aux_param_ini_D<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(D_sym, data=data_shape_D, digit=digit_shape_D)$aux.shapes, ctx = devices)
+arg_param_ini_D<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(D_sym, data=data_shape_D, digit=digit_shape_D)$arg.shapes, ctx = mx.cpu())
+aux_param_ini_D<- mx.init.create(initializer = initializer, shape.array = mx.symbol.infer.shape(D_sym, data=data_shape_D, digit=digit_shape_D)$aux.shapes, ctx = mx.cpu())
 
 mx.exec.update.arg.arrays(exec_G, arg_param_ini_G, match.name=TRUE)
 mx.exec.update.aux.arrays(exec_G, aux_param_ini_G, match.name=TRUE)
@@ -77,7 +77,7 @@ iter_G$reset()
 iter_D$reset()
 
 
-for (iteration in 1:400) {
+for (iteration in 1:2400) {
   
   iter_G$iter.next()
   iter_D$iter.next()
@@ -157,8 +157,8 @@ for (iteration in 1:400) {
   }
 }
 
-mx.symbol.save(D_sym, filename = "models/D_sym_model_A1.json")
-mx.symbol.save(G_sym, filename = "models/G_sym_model_A1.json")
-mx.nd.save(arg_param_ini_D, filename = "models/D_params_model_A1.params")
-mx.nd.save(arg_param_ini_G, filename = "models/G_params_model_A1.params")
+mx.symbol.save(D_sym, filename = "models/D_sym_model_v1.json")
+mx.symbol.save(G_sym, filename = "models/G_sym_model_v1.json")
+mx.nd.save(arg_param_ini_D, filename = "models/D_params_model_v1.params")
+mx.nd.save(arg_param_ini_G, filename = "models/G_params_model_v1.params")
 

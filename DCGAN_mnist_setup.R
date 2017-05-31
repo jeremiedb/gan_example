@@ -5,7 +5,10 @@ require("mxnet")
 
 source("iterators.R")
 
+
+##################################################
 ### Data import and preperation
+##################################################
 train <- read_csv('data/train.csv')
 train<- data.matrix(train)
 
@@ -14,9 +17,6 @@ train_data <- t(train_data/255*2-1)
 train_label <- as.integer(train[,1])
 
 dim(train_data) <- c(28, 28, 1, ncol(train_data))
-
-
-
 
 ##################################################
 #### Model parameters
@@ -80,14 +80,16 @@ d3 = mx.symbol.Convolution(dact2, name='d3', kernel=c(3,3), stride=c(1,1), pad=c
 dbn3 = mx.symbol.BatchNorm(d3, name='dbn3', fix_gamma=fix_gamma, eps=eps)
 dact3 = mx.symbol.LeakyReLU(dbn3, name='dact3', act_type='elu', slope=0.25)
 
-d4 = mx.symbol.Convolution(dact3, name='d4', kernel=c(4,4), pad=c(0,0), num_filter=128, no_bias=no_bias)
-dflat = mx.symbol.Flatten(d4, name="dflat")
+d4 = mx.symbol.Convolution(dact2, name='d3', kernel=c(4,4), stride=c(1,1), pad=c(0,0), num_filter=64, no_bias=no_bias)
+dbn4 = mx.symbol.BatchNorm(d4, name='dbn4', fix_gamma=fix_gamma, eps=eps)
+dact4 = mx.symbol.LeakyReLU(dbn4, name='dact4', act_type='elu', slope=0.25)
 
-dfc1 <- mx.symbol.FullyConnected(data=dflat, name="dfc1", num_hidden=32, no_bias=T)
-dfc1_act<- mx.symbol.LeakyReLU(dfc1, name='dfc1_act', act_type='elu', slope=0.25)
+# pool4 <- mx.symbol.Pooling(data=dact3, name="pool4", pool_type="avg", kernel=c(4,4), stride=c(1,1), pad=c(0,0))
 
-dfc <- mx.symbol.FullyConnected(data=dfc1_act, name="dfc", num_hidden=1, no_bias=F)
-D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='D_sym')
+dflat = mx.symbol.Flatten(dact4, name="dflat")
+
+dfc <- mx.symbol.FullyConnected(data=dflat, name="dfc", num_hidden=1, no_bias=F)
+D_sym = mx.symbol.LogisticRegressionOutput(data=dfc, label=label, name='D_sym')
 
 
 ########################
@@ -96,6 +98,6 @@ D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='D_sym')
 input_shape_G<- c(1, 1, 10, batch_size)
 input_shape_D<- c(28, 28, 1, batch_size)
 
-graph.viz(G_sym, type = "graph", direction = "LR", shape=input_shape_G)
-graph.viz(D_sym, type = "graph", direction = "LR", shape=input_shape_D)
+graph.viz(G_sym, type = "graph", direction = "LR")
+graph.viz(D_sym, type = "graph", direction = "LR")
 
