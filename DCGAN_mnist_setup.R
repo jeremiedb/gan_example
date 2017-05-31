@@ -1,51 +1,25 @@
 require("imager")
-require("data.table")
 require("dplyr")
-require("tidyr")
 require("readr")
-require("ggplot2")
-require("plotly")
-require("DiagrammeR")
 require("mxnet")
 
 source("iterators.R")
 
-#############################################
+### Data import and preperation
 train <- read_csv('data/train.csv')
-test <- read_csv('data/test.csv')
+train<- data.matrix(train)
 
-set.seed(123)
-eval_rows<- sample(1:nrow(train), size = round(0.1*nrow(train),0), replace = F)
-eval<- train[eval_rows,]
-train<- train[-eval_rows,]
+train_data <- train[,-1]
+train_data <- t(train_data/255*2-1)
+train_label <- as.integer(train[,1])
 
-train <- data.matrix(train)
-eval <- data.matrix(eval)
-test <- data.matrix(test)
-
-train_x <- train[,-1]
-train_labels <- as.integer(train[,1])
-
-eval_x <- eval[,-1]
-eval_labels <- as.integer(eval[,1])
-
-train_x <- t(train_x/255*2-1)
-eval_x <- t(eval_x/255*2-1)
-test <- t(test/255*2-1)
+dim(train_data) <- c(28, 28, 1, ncol(train_data))
 
 
-################################################################
-#### Convert data to arrays
-train_array <- train_x
-dim(train_array) <- c(28, 28, 1, ncol(train_x))
-eval_array <- eval_x
-dim(eval_array) <- c(28, 28, 1, ncol(eval_x))
-test_array <- test
-dim(test_array) <- c(28, 28, 1, ncol(test))
 
 
 ##################################################
-#### Generator Symbol
+#### Model parameters
 ##################################################
 random_dim<- 96
 gen_features<- 96
@@ -53,10 +27,13 @@ dis_features<- 32
 image_depth = 1
 fix_gamma<- T
 no_bias<- T
-eps<-1e-5 + 1e-12
-
+eps<- 1e-5 + 1e-12
 batch_size<- 64
 
+
+##################################################
+#### Generator Symbol
+##################################################
 data = mx.symbol.Variable('data')
 
 gen_rand<- mx.symbol.normal(loc=0, scale=1, shape=c(1, 1, random_dim, batch_size), name="gen_rand")
@@ -74,12 +51,8 @@ g3 = mx.symbol.Deconvolution(gact2, name='g3', kernel=c(4,4), stride=c(2,2), pad
 gbn3 = mx.symbol.BatchNorm(g3, name='gbn3', fix_gamma=fix_gamma, eps=eps)
 gact3 = mx.symbol.Activation(gbn3, name='gact3', act_type='relu')
 
-# g4 = mx.symbol.Deconvolution(gact3, name='g4', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=ngf, no_bias=no_bias)
-# gbn4 = mx.symbol.BatchNorm(g4, name='gbn4', fix_gamma=fix_gamma, eps=eps)
-# gact4 = mx.symbol.Activation(gbn4, name='gact4', act_type='relu')
-
-g5 = mx.symbol.Deconvolution(gact3, name='g5', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=image_depth, no_bias=no_bias)
-G_sym = mx.symbol.Activation(g5, name='gact5', act_type='tanh')
+g4 = mx.symbol.Deconvolution(gact3, name='g4', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=image_depth, no_bias=no_bias)
+G_sym = mx.symbol.Activation(g4, name='G_sym', act_type='tanh')
 
 
 ##################################################
@@ -102,24 +75,19 @@ pool1 <- mx.symbol.Pooling(data=dact1, name="pool1", pool_type="max", kernel=c(2
 d2 = mx.symbol.Convolution(pool1, name='d2', kernel=c(3,3), stride=c(2,2), pad=c(0,0), num_filter=32, no_bias=no_bias)
 dbn2 = mx.symbol.BatchNorm(d2, name='dbn2', fix_gamma=fix_gamma, eps=eps)
 dact2 = mx.symbol.LeakyReLU(dbn2, name='dact2', act_type='elu', slope=0.25)
-#pool2 <- mx.symbol.Pooling(data=dact2, name="pool2", pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
 
-# d3 = mx.symbol.Convolution(dact2, name='d3', kernel=c(4,4), stride=c(2,2), pad=c(1,1), num_filter=ndf*4, no_bias=no_bias)
-# dbn3 = mx.symbol.BatchNorm(d3, name='dbn3', fix_gamma=fix_gamma, eps=eps)
-# dact3 = mx.symbol.LeakyReLU(dbn3, name='dact3', act_type='elu', slope=0.25)
+d3 = mx.symbol.Convolution(dact2, name='d3', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=64, no_bias=no_bias)
+dbn3 = mx.symbol.BatchNorm(d3, name='dbn3', fix_gamma=fix_gamma, eps=eps)
+dact3 = mx.symbol.LeakyReLU(dbn3, name='dact3', act_type='elu', slope=0.25)
 
-d4 = mx.symbol.Convolution(dact2, name='d4', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=64, no_bias=no_bias)
-dbn4 = mx.symbol.BatchNorm(d4, name='dbn4', fix_gamma=fix_gamma, eps=eps)
-dact4 = mx.symbol.LeakyReLU(dbn4, name='dact4', act_type='elu', slope=0.25)
-
-d5 = mx.symbol.Convolution(dact4, name='d5', kernel=c(4,4), pad=c(0,0), num_filter=128, no_bias=no_bias)
-dflat = mx.symbol.Flatten(d5, name="dflat")
+d4 = mx.symbol.Convolution(dact3, name='d4', kernel=c(4,4), pad=c(0,0), num_filter=128, no_bias=no_bias)
+dflat = mx.symbol.Flatten(d4, name="dflat")
 
 dfc1 <- mx.symbol.FullyConnected(data=dflat, name="dfc1", num_hidden=32, no_bias=T)
 dfc1_act<- mx.symbol.LeakyReLU(dfc1, name='dfc1_act', act_type='elu', slope=0.25)
 
 dfc <- mx.symbol.FullyConnected(data=dfc1_act, name="dfc", num_hidden=1, no_bias=F)
-D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='dloss')
+D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='D_sym')
 
 
 ########################
@@ -127,9 +95,6 @@ D_sym = mx.symbol.LinearRegressionOutput(data=dfc, label=label, name='dloss')
 ########################
 input_shape_G<- c(1, 1, 10, batch_size)
 input_shape_D<- c(28, 28, 1, batch_size)
-
-graph.viz(G_sym, type = "vis", direction = "UD", shape=input_shape_G)
-graph.viz(D_sym, type = "vis", direction = "UD", shape=input_shape_D)
 
 graph.viz(G_sym, type = "graph", direction = "LR", shape=input_shape_G)
 graph.viz(D_sym, type = "graph", direction = "LR", shape=input_shape_D)

@@ -23,8 +23,6 @@ mx.metric.logloss <- mx.metric.custom("logloss", function(label, pred) {
 iter_G<- G_iterator(batch_size = batch_size)
 iter_D<- D_iterator(batch_size = batch_size)
 
-#group<- mx.symbol.Group(linearReg)
-
 exec_G<- mx.simple.bind(symbol = G_sym, data=data_shape_G, ctx = devices, grad.req = "write")
 exec_D<- mx.simple.bind(symbol = D_sym, data=data_shape_D, digit=digit_shape_D, ctx = devices, grad.req = "write")
 
@@ -92,7 +90,7 @@ for (iteration in 1:400) {
   
   ### Feed Discriminator with Concatenated Generator images and real images
   ### Random input to Generator
-  D_data_fake <- exec_G$ref.outputs$gact5_output
+  D_data_fake <- exec_G$ref.outputs$G_sym_output
   D_digit_fake <- G_values$data %>% mx.nd.Reshape(shape=c(-1, batch_size))
   
   D_values <- iter_D$value()
@@ -106,7 +104,7 @@ for (iteration in 1:400) {
   update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
   mx.exec.update.arg.arrays(exec_D, update_args_D, skip.null=TRUE)
   
-  metric_D_value <- metric_D$update(label = mx.nd.array(rep(0, batch_size)), exec_D$ref.outputs[["dloss_output"]], metric_D_value)
+  metric_D_value <- metric_D$update(label = mx.nd.array(rep(0, batch_size)), exec_D$ref.outputs[["D_sym_output"]], metric_D_value)
   
   ### Train loop on real
   mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_real, digit=D_digit_real, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
@@ -115,7 +113,7 @@ for (iteration in 1:400) {
   update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
   mx.exec.update.arg.arrays(exec_D, update_args_D, skip.null=TRUE)
   
-  metric_D_value <- metric_D$update(mx.nd.array(rep(1, batch_size)), exec_D$ref.outputs[["dloss_output"]], metric_D_value)
+  metric_D_value <- metric_D$update(mx.nd.array(rep(1, batch_size)), exec_D$ref.outputs[["D_sym_output"]], metric_D_value)
   
   ### Update Generator weights - use a seperate executor for writing data gradients
   exec_D_back<- mxnet:::mx.symbol.bind(symbol = D_sym, arg.arrays = exec_D$arg.arrays, aux.arrays = exec_D$aux.arrays, grad.reqs = rep("write", length(exec_D$arg.arrays)), ctx = devices)
@@ -143,21 +141,16 @@ for (iteration in 1:400) {
     #cat(paste0("[", iteration, "] ", train_metric_result$name, ": ", train_metric_log, " ", eval_metric_log, "\n"))
   }
   
-  if (iteration ==1 | iteration %% 100==0){
+  if (iteration==1 | iteration %% 100==0){
     
     metric_D_value<- metric_D$init()
     
     par(mfrow=c(3,3), mar=c(0.1,0.1,0.1,0.1))
     for (i in 1:9) {
-      img <- as.array(exec_G$ref.outputs$gact5_output)[,,,i]
+      img <- as.array(exec_G$ref.outputs$G_sym_output)[,,,i]
       plot(as.cimg(img), axes=F)
     }
-    
-    # for (i in 1:8) {
-    #   img <- as.array(iter_D$value()$data)[,,,i]
-    #   plot(as.cimg(img), axes=F)
-    # }
-    
+
     print(as.numeric(as.array(G_values$digit)))
     print(as.numeric(as.array(D_values$label)))
     
