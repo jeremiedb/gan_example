@@ -1,15 +1,15 @@
-Deep Conditional Generative Adversial Network with MXNet R package
+Conditional Generative Adversial Network with MXNet R package
 ================
 
-This tutorial shows how to build and train a Deep Conditional Generative Adversial Network (DCGAN) on MNIST images.
+This tutorial shows how to build and train a Conditional Generative Adversial Network (CGAN) on MNIST images.
 
 ### How GAN works
 
 A Generative Adversial Model simultaneously trains two models: a generator that learns to output fake samples from an unknown distribution and a discriminator that learns to distinguish fake from real samples.
 
-The DCGAN is a conditional variation of the GAN where the generator is instructed to generate a real sample having specific characteristics rather than a generic sample from full distribution. Such condition could be the label associated with an image like in this tutorial or a more detailed tag as shown in the example below:
+The CGAN is a conditional variation of the GAN where the generator is instructed to generate a real sample having specific characteristics rather than a generic sample from full distribution. Such condition could be the label associated with an image like in this tutorial or a more detailed tag as shown in the example below:
 
-![](www/dcgan_network.jpg)
+![](www/cgan_network.jpg)
 
 Image credit: [Scott Reed](https://github.com/reedscot/icml2016)
 
@@ -26,8 +26,8 @@ require("mxnet")
 
 The full demo is comprised of the two following scripts available on [GitHub](https://github.com/jeremiedb/gan_example):
 
--   `DCGAN_mnist_setup.R`: prepare data and define the model structure
--   `DCGAN_train.R`: execute the training
+-   `CGAN_mnist_setup.R`: prepare data and define the model structure
+-   `CGAN_train.R`: execute the training
 
 ### Data preperation
 
@@ -44,7 +44,7 @@ train_label <- as.integer(train[,1])
 dim(train_data) <- c(28, 28, 1, ncol(train_data))
 ```
 
-Custom iterators are defined in `iterators.R` and imported by `DCGAN_mnist_setup.R`.
+Custom iterators are defined in `iterators.R` and imported by `CGAN_mnist_setup.R`.
 
 ### Generator
 
@@ -104,7 +104,7 @@ update_args_G<- updater_G(weight = exec_G$ref.arg.arrays, grad = exec_G$ref.grad
 mx.exec.update.arg.arrays(exec_G, update_args_G, skip.null=TRUE)
 ```
 
-The above training steps are executed in the `DCGAN_train.R` script.
+The above training steps are executed in the `CGAN_train.R` script.
 
 ### Monitor the training
 
@@ -124,14 +124,16 @@ Below are samples obtained at different stage of the training.
 
 Starting from noise
 
-![](www/DCGAN_1.png)
+![](www/CGAN_1.png)
 
 Slowly getting it
 
-![](www/DCGAN_200.png)
+![](www/CGAN_200.png)
 
 Generate specified digit images on demand
 
-![](www/DCGAN_2400.png)
+![](www/CGAN_2400.png)
 
-Further details of the DCGAN methodology can be found in the paper [Generative Adversarial Text to Image Synthesis](https://arxiv.org/abs/1605.05396).
+Once the model is trained, synthetic images of the desired digit can be produced by feeding the generator with fixed labels rather than the randomly generated ones used during the training.
+
+Further details of the CGAN methodology can be found in the paper [Generative Adversarial Text to Image Synthesis](https://arxiv.org/abs/1605.05396).
