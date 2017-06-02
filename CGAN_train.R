@@ -130,15 +130,8 @@ for (iteration in 1:2400) {
   #metric_G_value <- metric_G$update(values[[label_name]], exec_G$ref.outputs[[output_name]], metric_G_value)
   
   if (iteration %% 25==0){
-    
     D_metric_result <- metric_D$get(metric_D_value)
-    #eval_metric_result <- metric$get(eval.metric)
-    
-    #D_metric_result_log<- paste0("train=", D_metric_result$value)
-    #eval_metric_log<- paste0("eval=", eval_metric_result$value)
-    
     cat(paste0("[", iteration, "] ", D_metric_result$name, ": ", D_metric_result$value, "\n"))
-    #cat(paste0("[", iteration, "] ", train_metric_result$name, ": ", train_metric_log, " ", eval_metric_log, "\n"))
   }
   
   if (iteration==1 | iteration %% 100==0){
@@ -158,7 +151,32 @@ for (iteration in 1:2400) {
 }
 
 mx.symbol.save(D_sym, filename = "models/D_sym_model_v1.json")
-mx.symbol.save(G_sym, filename = "models/G_sym_model_v1.json")
-mx.nd.save(arg_param_ini_D, filename = "models/D_params_model_v1.params")
-mx.nd.save(arg_param_ini_G, filename = "models/G_params_model_v1.params")
+mx.nd.save(exec_D$arg.arrays, filename = "models/D_aux_params_v1.params")
+mx.nd.save(exec_D$aux.arrays, filename = "models/D_aux_params_v1.params")
 
+mx.symbol.save(G_sym, filename = "models/G_sym_model_v1.json")
+mx.nd.save(exec_G$arg.arrays, filename = "models/G_arg_params_v1.params")
+mx.nd.save(exec_G$aux.arrays, filename = "models/G_aux_params_v1.params")
+
+
+### Inference
+G_sym<- mx.symbol.load("models/G_sym_model_v1.json")
+G_arg_params<- mx.nd.load("models/G_arg_params_v1.params")
+G_aux_params<- mx.nd.load("models/G_aux_params_v1.params")
+
+digit<- mx.nd.array(rep(9, times=batch_size))
+data<- mx.nd.one.hot(indices = digit, depth = 10)
+data<- mx.nd.reshape(data = data, shape = c(1,1,-1, batch_size))
+
+exec_G<- mx.simple.bind(symbol = G_sym, data=data_shape_G, ctx = devices, grad.req = "null")
+mx.exec.update.arg.arrays(exec_G, G_arg_params, match.name=TRUE)
+mx.exec.update.arg.arrays(exec_G, list(data=data), match.name=TRUE)
+mx.exec.update.aux.arrays(exec_G, G_aux_params, match.name=TRUE)
+
+mx.exec.forward(exec_G, is.train=F)
+
+par(mfrow=c(3,3), mar=c(0.1,0.1,0.1,0.1))
+for (i in 1:9) {
+  img <- as.array(exec_G$ref.outputs$G_sym_output)[,,,i]
+  plot(as.cimg(img), axes=F)
+}

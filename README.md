@@ -122,18 +122,37 @@ if (iteration==1 | iteration %% 100==0){
 
 Below are samples obtained at different stage of the training.
 
-Starting from noise
+Starting from noise:
 
 ![](www/CGAN_1.png)
 
-Slowly getting it
+Slowly getting it - iteration 200:
 
 ![](www/CGAN_200.png)
 
-Generate specified digit images on demand
+Generate specified digit images on demand - iteration 2400:
 
 ![](www/CGAN_2400.png)
 
+### Inference
+
 Once the model is trained, synthetic images of the desired digit can be produced by feeding the generator with fixed labels rather than the randomly generated ones used during the training.
+
+Here we will generate fake "9":
+
+``` r
+digit<- mx.nd.array(rep(9, times=batch_size))
+data<- mx.nd.one.hot(indices = digit, depth = 10)
+data<- mx.nd.reshape(data = data, shape = c(1,1,-1, batch_size))
+
+exec_G<- mx.simple.bind(symbol = G_sym, data=data_shape_G, ctx = devices, grad.req = "null")
+mx.exec.update.arg.arrays(exec_G, G_arg_params, match.name=TRUE)
+mx.exec.update.arg.arrays(exec_G, list(data=data), match.name=TRUE)
+mx.exec.update.aux.arrays(exec_G, G_aux_params, match.name=TRUE)
+
+mx.exec.forward(exec_G, is.train=F)
+```
+
+![](www/CGAN_infer_9.png)
 
 Further details of the CGAN methodology can be found in the paper [Generative Adversarial Text to Image Synthesis](https://arxiv.org/abs/1605.05396).
