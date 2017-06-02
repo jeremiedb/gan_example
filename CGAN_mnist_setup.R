@@ -5,9 +5,11 @@ require("mxnet")
 
 source("iterators.R")
 
-##################################################
+######################################################
 ### Data import and preperation
-##################################################
+### First download MNIST train data at Kaggle: 
+###   https://www.kaggle.com/c/digit-recognizer/data
+######################################################
 train <- read_csv('data/train.csv')
 train<- data.matrix(train)
 
