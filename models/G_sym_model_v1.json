@@ -6,9 +6,9 @@
       "inputs": []
     }, 
     {
-      "op": "random_normal", 
+      "op": "_random_normal", 
       "name": "gen_rand", 
-      "attr": {
+      "attrs": {
         "loc": "0", 
         "scale": "1", 
         "shape": "(64, 96, 1, 1)"
@@ -18,13 +18,13 @@
     {
       "op": "Concat", 
       "name": "gen_concat", 
-      "attr": {"num_args": "2"}, 
+      "attrs": {"num_args": "2"}, 
       "inputs": [[0, 0, 0], [1, 0, 0]]
     }, 
     {
       "op": "null", 
       "name": "g1_weight", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "384"
@@ -34,7 +34,7 @@
     {
       "op": "Deconvolution", 
       "name": "g1", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "384"
@@ -44,7 +44,7 @@
     {
       "op": "null", 
       "name": "gbn1_gamma", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -53,7 +53,7 @@
     {
       "op": "null", 
       "name": "gbn1_beta", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -62,7 +62,7 @@
     {
       "op": "null", 
       "name": "gbn1_moving_mean", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"zero\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -72,7 +72,7 @@
     {
       "op": "null", 
       "name": "gbn1_moving_var", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"one\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -82,22 +82,21 @@
     {
       "op": "BatchNorm", 
       "name": "gbn1", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
       "inputs": [[4, 0, 0], [5, 0, 0], [6, 0, 0], [7, 0, 1], [8, 0, 1]]
     }, 
     {
-      "op": "Activation", 
+      "op": "relu", 
       "name": "gact1", 
-      "attr": {"act_type": "relu"}, 
       "inputs": [[9, 0, 0]]
     }, 
     {
       "op": "null", 
       "name": "g2_weight", 
-      "attr": {
+      "attrs": {
         "kernel": "(3, 3)", 
         "no_bias": "1", 
         "num_filter": "192", 
@@ -109,7 +108,7 @@
     {
       "op": "Deconvolution", 
       "name": "g2", 
-      "attr": {
+      "attrs": {
         "kernel": "(3, 3)", 
         "no_bias": "1", 
         "num_filter": "192", 
@@ -121,7 +120,7 @@
     {
       "op": "null", 
       "name": "gbn2_gamma", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -130,7 +129,7 @@
     {
       "op": "null", 
       "name": "gbn2_beta", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -139,7 +138,7 @@
     {
       "op": "null", 
       "name": "gbn2_moving_mean", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"zero\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -149,7 +148,7 @@
     {
       "op": "null", 
       "name": "gbn2_moving_var", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"one\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -159,22 +158,21 @@
     {
       "op": "BatchNorm", 
       "name": "gbn2", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
       "inputs": [[12, 0, 0], [13, 0, 0], [14, 0, 0], [15, 0, 1], [16, 0, 1]]
     }, 
     {
-      "op": "Activation", 
+      "op": "relu", 
       "name": "gact2", 
-      "attr": {"act_type": "relu"}, 
       "inputs": [[17, 0, 0]]
     }, 
     {
       "op": "null", 
       "name": "g3_weight", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "96", 
@@ -186,7 +184,7 @@
     {
       "op": "Deconvolution", 
       "name": "g3", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "96", 
@@ -198,7 +196,7 @@
     {
       "op": "null", 
       "name": "gbn3_gamma", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -207,7 +205,7 @@
     {
       "op": "null", 
       "name": "gbn3_beta", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
@@ -216,7 +214,7 @@
     {
       "op": "null", 
       "name": "gbn3_moving_mean", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"zero\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -226,7 +224,7 @@
     {
       "op": "null", 
       "name": "gbn3_moving_var", 
-      "attr": {
+      "attrs": {
         "__init__": "[\"one\", {}]", 
         "eps": "1e-005", 
         "fix_gamma": "1"
@@ -236,22 +234,21 @@
     {
       "op": "BatchNorm", 
       "name": "gbn3", 
-      "attr": {
+      "attrs": {
         "eps": "1e-005", 
         "fix_gamma": "1"
       }, 
       "inputs": [[20, 0, 0], [21, 0, 0], [22, 0, 0], [23, 0, 1], [24, 0, 1]]
     }, 
     {
-      "op": "Activation", 
+      "op": "relu", 
       "name": "gact3", 
-      "attr": {"act_type": "relu"}, 
       "inputs": [[25, 0, 0]]
     }, 
     {
       "op": "null", 
       "name": "g4_weight", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "1", 
@@ -263,7 +260,7 @@
     {
       "op": "Deconvolution", 
       "name": "g4", 
-      "attr": {
+      "attrs": {
         "kernel": "(4, 4)", 
         "no_bias": "1", 
         "num_filter": "1", 
@@ -273,9 +270,8 @@
       "inputs": [[26, 0, 0], [27, 0, 0]]
     }, 
     {
-      "op": "Activation", 
+      "op": "tanh", 
       "name": "G_sym", 
-      "attr": {"act_type": "tanh"}, 
       "inputs": [[28, 0, 0]]
     }
   ], 
@@ -332,5 +328,5 @@
     36
   ], 
   "heads": [[29, 0, 0]], 
-  "attrs": {"mxnet_version": ["int", 905]}
+  "attrs": {"mxnet_version": ["int", 10301]}
 }

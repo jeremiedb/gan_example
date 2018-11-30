@@ -19,13 +19,12 @@ mx.metric.logloss <- mx.metric.custom("logloss", function(label, pred) {
 
 ##############################################
 ### Define iterators
-iter_G<- G_iterator(batch_size = batch_size)
-iter_D<- D_iterator(batch_size = batch_size)
+iter_G <- G_iterator(batch_size = batch_size)
+iter_D <- D_iterator(batch_size = batch_size)
 
 #group<- mx.symbol.Group(linearReg)
-
-exec_G<- mx.simple.bind(symbol = G_sym, data=input_shape_G, ctx = devices, grad.req = "write")
-exec_D<- mx.simple.bind(symbol = D_sym, data=input_shape_D, ctx = devices, grad.req = "write")
+exec_G <- mx.simple.bind(symbol = G_sym, data=input_shape_G, ctx = devices, grad.req = "write")
+exec_D <- mx.simple.bind(symbol = D_sym, data=input_shape_D, ctx = devices, grad.req = "write")
 
 names(exec_G$arg.arrays)
 names(exec_G$grad.arrays)
