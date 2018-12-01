@@ -22,7 +22,7 @@ dim(train_data) <- c(28, 28, 1, ncol(train_data))
 ##################################################
 #### Model parameters
 ##################################################
-random_dim <- 64
+random_dim <- 128
 gen_features <- 128
 dis_features <- 32
 image_depth <- 1
@@ -62,7 +62,7 @@ G_sym <- mx.symbol.sigmoid(g4, name='G_sym')
 ##################################################
 data <- mx.symbol.Variable('data')
 digit <- mx.symbol.Variable('digit')
-fake_flag <- mx.symbol.Variable('fake_flag')
+real_flag <- mx.symbol.Variable('real_flag')
 
 digit <- mx.symbol.one_hot(indices = digit, depth = 10, name = "digit_one_hot")
 digit <- mx.symbol.reshape(data = digit, shape = c(1, 1, 10, batch_size), name="digit_reshape")
@@ -70,27 +70,30 @@ digit <- mx.symbol.broadcast_to(data=digit, shape=c(28,28,10, batch_size), name=
 
 data_concat <- mx.symbol.concat(list(data, digit), num.args = 2, dim = 1, name='d_concat')
 
-d1 <- mx.symbol.Convolution(data=data_concat, name='d1', kernel=c(3,3), stride=c(1,1), pad=c(1,1), num_filter=dis_features, no_bias=no_bias)
-dbn1 <- mx.symbol.BatchNorm(d1, name='dbn1', fix_gamma=fix_gamma, eps=eps)
-dact1 <- mx.symbol.relu(dbn1, name='dact1')
-pool1 <- mx.symbol.Pooling(data=dact1, name="pool1", pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
+d1 <- mx.symbol.Convolution(data=data_concat, name='d1', kernel=c(5,5), stride=c(1,1), pad=c(2,2), num_filter=dis_features, no_bias=no_bias)
+d1 <- mx.symbol.BatchNorm(d1, name='dbn1', fix_gamma=fix_gamma, eps=eps)
+d1 <- mx.symbol.relu(d1, name='dact1')
+d1 <- mx.symbol.Pooling(data=d1, name="pool1", pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
 
-d2 <- mx.symbol.Convolution(pool1, name='d2', kernel=c(3,3), stride=c(2,2), pad=c(1,1), num_filter=dis_features, no_bias=no_bias)
-dbn2 <- mx.symbol.BatchNorm(d2, name='dbn2', fix_gamma=fix_gamma, eps=eps)
-dact2 <- mx.symbol.relu(dbn2, name='dact2')
+d2 <- mx.symbol.Convolution(d1, name='d2', kernel=c(3,3), stride=c(1,1), pad=c(1,1), num_filter=dis_features*2, no_bias=no_bias)
+d2 <- mx.symbol.BatchNorm(d2, name='dbn2', fix_gamma=fix_gamma, eps=eps)
+d2 <- mx.symbol.relu(d2)
+d2 <- mx.symbol.Pooling(data=d2, pool_type="max", kernel=c(2,2), stride=c(2,2), pad=c(0,0))
 
-d3 <- mx.symbol.Convolution(dact2, name='d3', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=dis_features*2, no_bias=no_bias)
+d3 <- mx.symbol.Convolution(d2, name='d3', kernel=c(3,3), stride=c(1,1), pad=c(0,0), num_filter=dis_features*2, no_bias=no_bias)
 dbn3 <- mx.symbol.BatchNorm(d3, name='dbn3', fix_gamma=fix_gamma, eps=eps)
 dact3 <- mx.symbol.relu(dbn3, name='dact3')
 
-d4 <- mx.symbol.Convolution(dact3, name='d4', kernel=c(5,5), stride=c(1,1), pad=c(0,0), num_filter=dis_features*3, no_bias=no_bias)
+d4 <- mx.symbol.Convolution(dact3, name='d4', kernel=c(5,5), stride=c(1,1), pad=c(0,0), num_filter=dis_features*4, no_bias=no_bias)
 dbn4 <- mx.symbol.BatchNorm(d4, name='dbn4', fix_gamma=fix_gamma, eps=eps)
 dact4 <- mx.symbol.relu(dbn4, name='dact4')
 
 dflat <- mx.symbol.Flatten(dact4, name="dflat")
 
 dfc <- mx.symbol.FullyConnected(data=dflat, name="dfc", num_hidden=1, no_bias=F)
-D_sym <- mx.symbol.LogisticRegressionOutput(data=dfc, label=fake_flag, name='D_sym')
+# D_sym <- mx.symbol.LogisticRegressionOutput(data=dfc, label=real_flag, name='D_sym')
+D_sym <- mx.symbol.LinearRegressionOutput(data=dfc, label=real_flag, name='D_sym')
+# D_sym <- mx.symbol.MAERegressionOutput(data=dfc, label=real_flag, name='D_sym')
 
 
 ########################
@@ -109,16 +112,18 @@ graph.viz(D_sym, direction = "LR", shape=list(data = input_shape_D, digit = batc
 iter <- mx.io.arrayiter(data = train_data, label = train_label, batch.size = batch_size, shuffle = T)
 initializer <- mx.init.Xavier(rnd_type = "gaussian", factor_type = "avg", magnitude = 3)
 
-# optimizer_G <- mxnet:::mx.opt.adadelta(rho = 0.92, epsilon = 1e-8, wd = 0, rescale.grad = 1, clip_gradient = 1)
-# optimizer_D <- mxnet:::mx.opt.adadelta(rho = 0.92, epsilon = 1e-8, wd = 0, rescale.grad = 1, clip_gradient = 1)
-optimizer_G <- mxnet:::mx.opt.adam(learning.rate = 1e-4, 
-                                   beta1 = 0.9, beta2 = 0.999, 
-                                   epsilon = 1e-8, wd = 0, 
-                                   rescale.grad = 1/batch_size, clip_gradient = 1)
-optimizer_D <- mxnet:::mx.opt.adam(learning.rate = 1e-4, 
-                                   beta1 = 0.9, beta2 = 0.999, 
-                                   epsilon = 1e-8, wd = 0, 
-                                   rescale.grad = 1/batch_size, clip_gradient = 1)
+# adadelta
+# optimizer_G <- mxnet:::mx.opt.adadelta(rho = 0.9, epsilon = 1e-8, wd = 0, rescale.grad = 1/batch_size, clip_gradient = 1)
+# optimizer_D <- mxnet:::mx.opt.adadelta(rho = 0.9, epsilon = 1e-8, wd = 0, rescale.grad = 1/batch_size, clip_gradient = 1)
+
+# rmsprop
+# optimizer_G <- mxnet:::mx.opt.rmsprop(learning.rate = 1e-4, gamma1 = 0.95, gamma2 = 0.9, epsilon = 1e-5, wd = 1e-8, rescale.grad = 1/batch_size, clip_gradient = 1)
+# optimizer_D <- mxnet:::mx.opt.rmsprop(learning.rate = 1e-5, gamma1 = 0.95, gamma2 = 0.9, epsilon = 1e-5, wd = 1e-8, rescale.grad = 1/batch_size, clip_gradient = 0.1)
+
+# adam
+optimizer_G <- mxnet:::mx.opt.adam(learning.rate = 1e-3, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, wd = 0, rescale.grad = 1/batch_size, clip_gradient = 1)
+optimizer_D <- mxnet:::mx.opt.adam(learning.rate = 1e-3, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, wd = 0, rescale.grad = 1/batch_size, clip_gradient = 1)
+
 iter$reset()
 iter$iter.next()
 
@@ -175,7 +180,7 @@ grad.req.G[grad.req.write.G] <- "write"
 
 # for discriminator, we want to get the gradient for the data as it will serve as input gradient for the generator
 grad.req.D <- rep("null", length(arguments_D))
-grad.req.write.D <- arguments_D %in% setdiff(c(arg.params.names.D, "data"), c("fake_flag", "digit"))
+grad.req.write.D <- arguments_D %in% setdiff(c(arg.params.names.D, "data"), c("real_flag", "digit"))
 grad.req.D[grad.req.write.D] <- "write"
 
 # Arg array order
@@ -215,6 +220,7 @@ message("Start training")
 input_G <- input_params_G
 input_D <- input_params_D
 
+# initialize executors
 exec_G <- mx.symbol.bind(symbol = G_sym, arg.arrays = c(input_G, arg.params.G)[arg.update.idx.G],
                          aux.arrays = aux.params.G, ctx = ctx, grad.req = grad.req.G)
 
@@ -240,7 +246,7 @@ iteration <- 1
 iter$reset()
 
 # train loop
-for (iteration in 1:1800) {
+for (iteration in 1:2400) {
   
   if (!iter$iter.next()) {
     message(paste0("Epoch ", epoch, " completed"))
@@ -255,14 +261,17 @@ for (iteration in 1:1800) {
   mx.exec.forward(exec_G, is.train=T)
   
   ### Feed the Discriminator with the image produced by the Generator and 
-  ### Train loop on fake - fake_flag is set to 0
-  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, digit = iter_value$label, fake_flag = mx.nd.zeros(shape = batch_size)), match.name=TRUE)
-  mx.exec.forward(exec_D, is.train = T)
-  
-  preds <- mx.nd.copyto(exec_D$outputs[[1]], ctx = mx.cpu())
+  ### Train loop on fake - real_flag is set to 0
   labels <- mx.nd.zeros(shape = batch_size, ctx = mx.cpu())
-  
+  mx.exec.update.arg.arrays(exec_D, 
+                            arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, 
+                                              digit = iter_value$label, 
+                                              real_flag = labels), 
+                            match.name=TRUE)
+  mx.exec.forward(exec_D, is.train = T)
+  preds <- mx.nd.copyto(exec_D$outputs[[1]], ctx = mx.cpu())
   mx.exec.backward(exec_D)
+  
   update_args_D <- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
   mx.exec.update.arg.arrays(exec = exec_D, arg.arrays = update_args_D, skip.null=TRUE)
   
@@ -271,7 +280,9 @@ for (iteration in 1:1800) {
                                     state = metric_D_value)
   
   ### Train loop on real
-  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data = iter_value$data, digit = iter_value$label, fake_flag = mx.nd.ones(shape = batch_size)), match.name=TRUE)
+  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data = iter_value$data, 
+                                                      digit = iter_value$label, 
+                                                      real_flag = mx.nd.ones(shape = batch_size)), match.name=TRUE)
   mx.exec.forward(exec_D, is.train=T)
   
   preds <- mx.nd.copyto(exec_D$ref.outputs[[1]], mx.cpu())
@@ -286,7 +297,7 @@ for (iteration in 1:1800) {
                                     state = metric_D_value)
   
   ### Update Generator weights - use a seperate executor for writing data gradients
-  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, digit = iter_value$label, fake_flag = mx.nd.ones(shape = batch_size)), match.name=TRUE)
+  mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, digit = iter_value$label, real_flag = mx.nd.ones(shape = batch_size)), match.name=TRUE)
   mx.exec.forward(exec_D, is.train=T)
   mx.exec.backward(exec_D)
   D_grads <- exec_D$ref.grad.arrays$data
@@ -316,4 +327,37 @@ for (iteration in 1:1800) {
     print(as.numeric(as.array(iter_value$label))[1:9])
     
   }
+}
+
+
+
+# mx.symbol.save(D_sym, filename = "models/D_sym_model_v1.json")
+# mx.nd.save(exec_D$arg.arrays, filename = "models/D_aux_params_v1.params")
+# mx.nd.save(exec_D$aux.arrays, filename = "models/D_aux_params_v1.params")
+
+# mx.symbol.save(G_sym, filename = "models/G_sym_model_v1.json")
+# mx.nd.save(exec_G$arg.arrays, filename = "models/G_arg_params_v1.params")
+# mx.nd.save(exec_G$aux.arrays, filename = "models/G_aux_params_v1.params")
+
+# G_sym<- mx.symbol.load("models/G_sym_model_v1.json")
+# G_arg_params<- mx.nd.load("models/G_arg_params_v1.params")
+# G_aux_params<- mx.nd.load("models/G_aux_params_v1.params")
+
+# exec_G <- mx.simple.bind(symbol = G_sym, label = input.shape.G$label, ctx = ctx, grad.req = "null")
+# mx.exec.update.arg.arrays(exec_G, exec_G$arg.arrays, match.name=TRUE)
+# mx.exec.update.aux.arrays(exec_G, exec_G$aux.arrays, match.name=TRUE)
+
+###################################
+# Generate fake number on demand
+###################################
+label <- rep(0, batch_size)
+label[1:9] <- 1:9
+label <- mx.nd.array(label)
+mx.exec.update.arg.arrays(exec_G, list(label=label), match.name=TRUE)
+
+mx.exec.forward(exec_G, is.train=F)
+par(mfrow=c(3,3), mar=c(0.1,0.1,0.1,0.1))
+for (i in 1:9) {
+  img <- as.array(exec_G$ref.outputs$G_sym_output)[,,,i]
+  plot(as.cimg(img), axes=F)
 }

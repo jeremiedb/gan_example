@@ -3,6 +3,14 @@ Conditional Generative Adversial Network with MXNet R package
 
 This tutorial shows how to build and train a Conditional Generative Adversial Network (CGAN) on MNIST images.
 
+### Getting started
+
+To end-to-end data preperation, model building and image generation is contained within single scripts. Three variations are presented:
+
+-   `CGAN_deconv.R`: Generator using deconcolutions.
+-   `CGAN_upsample.R`: Generator using upsampling.
+-   `CGAN_upsample.R`: Generator and Discriminator using embedded representation of the digits rather than one-hot encoding. Serves as an example on how to tackle more complex generative tasks.
+
 ### How GAN works
 
 A Generative Adversial Model simultaneously trains two models: a generator that learns to output fake samples from an unknown distribution and a discriminator that learns to distinguish fake from real samples.
@@ -15,36 +23,28 @@ Image credit: [Scott Reed](https://github.com/reedscot/icml2016)
 
 ### Initial setup
 
-The following packages are needed to run the tutorial:
+The following packages are needed to run the tutorials:
 
 ``` r
 require("imager")
-require("dplyr")
-require("readr")
+require("data.table")
 require("mxnet")
 ```
-
-The full demo is comprised of the two following scripts available on [GitHub](https://github.com/jeremiedb/gan_example):
-
--   `CGAN_mnist_setup.R`: prepare data and define the model structure
--   `CGAN_train.R`: execute the training
 
 ### Data preperation
 
 The MNIST dataset is available on [Kaggle](https://www.kaggle.com/c/digit-recognizer/data). Once `train.csv` is downloaded into the `data/` folder, we can import into R.
 
 ``` r
-train <- read_csv('data/train.csv')
-train<- data.matrix(train)
+train <- fread('data/train.csv')
+train <- data.matrix(train)
 
 train_data <- train[,-1]
-train_data <- t(train_data/255*2-1)
+train_data <- t(train_data/255)
 train_label <- as.integer(train[,1])
 
 dim(train_data) <- c(28, 28, 1, ncol(train_data))
 ```
-
-Custom iterators are defined in `iterators.R` and imported by `CGAN_mnist_setup.R`.
 
 ### Generator
 
@@ -52,7 +52,7 @@ The generator is a network that creates novel samples (MNIST images) from 2 inpu
 - Noise vector
 - Labels defining the object condition (which digit to produce)
 
-The noise vector provides the building blocks to the Generator model, which will learns how to structure that noise into a sample. The `mx.symbol.Deconvolution` operator is used to upsample the initial input from a 1x1 shape up to a 28x28 image.
+The noise vector provides the building blocks to the Generator model, which will learns how to structure that noise into a sample. The `mx.symbol.Deconvolution` operator is used to upsample the initial input from a 1x1 shape up to a 28x28 image. Alernatively, a combination of upsampling and regular convolution can be used.
 
 The information on the label for which to generate a fake sample is provided by a one-hot encoding of the label indices that is appended to the random noise. For MNIST, the 0-9 indices are therefore converted into a binary vector of length 10. More complex applications would require embeddings rather than simple one-hot to encode the condition.
 
@@ -71,19 +71,29 @@ In a conditional GAN, the labels associated with the samples are also provided t
 The training process of the discriminator is most obvious: the loss is simple a binary TRUE/FALSE response and that loss is propagated back into the CNN network. It can therefore be understood as a simple binary classification problem.
 
 ``` r
-### Train loop on fake
-mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_fake, digit=D_digit_fake, label=mx.nd.array(rep(0, batch_size))), match.name=TRUE)
-mx.exec.forward(exec_D, is.train=T)
+# Train discriminator on fakes
+real_flag <- mx.nd.zeros(shape = batch_size, ctx = mx.cpu())
+mx.exec.update.arg.arrays(exec_D, 
+                          arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, 
+                                            digit = iter_value$label, 
+                                            real_flag = real_flag), 
+                          match.name=TRUE)
+mx.exec.forward(exec_D, is.train = T)
 mx.exec.backward(exec_D)
-update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
-mx.exec.update.arg.arrays(exec_D, update_args_D, skip.null=TRUE)
 
-### Train loop on real
-mx.exec.update.arg.arrays(exec_D, arg.arrays = list(data=D_data_real, digit=D_digit_real, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
+update_args_D <- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
+mx.exec.update.arg.arrays(exec = exec_D, arg.arrays = update_args_D, skip.null=TRUE)
+
+# Train discriminator on reals
+mx.exec.update.arg.arrays(exec_D, 
+                          arg.arrays = list(data = iter_value$data, 
+                                            digit = iter_value$label, 
+                                            real_flag = mx.nd.ones(shape = batch_size)), 
+                          match.name=TRUE)
 mx.exec.forward(exec_D, is.train=T)
 mx.exec.backward(exec_D)
-update_args_D<- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
-mx.exec.update.arg.arrays(exec_D, update_args_D, skip.null=TRUE)
+update_args_D <- updater_D(weight = exec_D$ref.arg.arrays, grad = exec_D$ref.grad.arrays)
+mx.exec.update.arg.arrays(exec = exec_D, arg.arrays = update_args_D, skip.null=TRUE)
 ```
 
 The generator loss comes from the backpropagation of the the discriminator loss into its generated output. By faking the generator labels to be real samples into the discriminator, the discriminator back-propagated loss provides the generator with the information on how to best adapt its parameters to trick the discriminator into believing the fake samples are real.
@@ -91,16 +101,19 @@ The generator loss comes from the backpropagation of the the discriminator loss 
 This requires to backpropagate the gradients up to the input data of the discriminator (whereas this input gradient is typically ignored in vanilla feedforward network).
 
 ``` r
-### Update Generator weights - use a seperate executor for writing data gradients
-exec_D_back<- mxnet:::mx.symbol.bind(symbol = D_sym, arg.arrays = exec_D$arg.arrays, aux.arrays = exec_D$aux.arrays, grad.reqs = rep("write", length(exec_D$arg.arrays)), ctx = devices)
+# Update Generator weights - use discriminator data gradient as input to the generator backpropagation
+mx.exec.update.arg.arrays(exec_D, 
+                          arg.arrays = list(data = exec_G$ref.outputs$G_sym_output, 
+                                            digit = iter_value$label, 
+                                            real_flag = mx.nd.ones(shape = batch_size)), 
+                          match.name=TRUE)
 
-mx.exec.update.arg.arrays(exec_D_back, arg.arrays = list(data=D_data_fake, digit=D_digit_fake, label=mx.nd.array(rep(1, batch_size))), match.name=TRUE)
-mx.exec.forward(exec_D_back, is.train=T)
-mx.exec.backward(exec_D_back)
-D_grads<- exec_D_back$ref.grad.arrays$data
-mx.exec.backward(exec_G, out_grads=D_grads)
+mx.exec.forward(exec_D, is.train=T)
+mx.exec.backward(exec_D)
+D_grads <- exec_D$ref.grad.arrays$data
+mx.exec.backward(exec_G, out_grads = D_grads)
 
-update_args_G<- updater_G(weight = exec_G$ref.arg.arrays, grad = exec_G$ref.grad.arrays)
+update_args_G <- updater_G(weight = exec_G$ref.arg.arrays, grad = exec_G$ref.grad.arrays)
 mx.exec.update.arg.arrays(exec_G, update_args_G, skip.null=TRUE)
 ```
 
